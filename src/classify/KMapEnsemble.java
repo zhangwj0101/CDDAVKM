@@ -1,11 +1,11 @@
+// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.kpdus.com/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   KMapEnsemble.java
 package classify;
 
 import dimesionReduction.KDA;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.Random;
 import java.util.Scanner;
 import util.BRSD_BK;
@@ -19,172 +19,165 @@ import weka.core.Instances;
 
 public class KMapEnsemble {
 
-    Instances InDomainU;
-    Instances InDomainL;
-    Instances OutDomain;
-    Instances All;
-    static Classifier specific_classifier;
-    int maxIt;
-    double[] accuracy;
-    public static FileWriter fw;
-    public static int intCV = 10;
-
-    public KMapEnsemble(Instances In, Instances Out, int it, double ratio) throws Exception {
-        Instances[] tmp = getLU(In, (int) (In.numInstances() * ratio));
-        this.InDomainL = new Instances(tmp[0]);
-
-        this.InDomainU = new Instances(tmp[1]);
-        this.OutDomain = new Instances(Out);
-        this.All = new Instances(this.InDomainL);
+    public KMapEnsemble(Instances In, Instances Out, int it, double ratio)
+            throws Exception {
+        Instances tmp[] = getLU(In, (int) ((double) In.numInstances() * ratio));
+        InDomainL = new Instances(tmp[0]);
+        InDomainU = new Instances(tmp[1]);
+        OutDomain = new Instances(Out);
+        All = new Instances(InDomainL);
         for (int i = 0; i < Out.numInstances(); i++) {
-            this.All.add((Instance) Out.instance(i).copy());
+            All.add((Instance) Out.instance(i).copy());
         }
 
-        this.maxIt = it;
-        this.accuracy = new double[this.maxIt];
+        maxIt = it;
+        accuracy = new double[maxIt];
     }
 
-    private Instances selectPointForKDA(int idx, Instances src, Instances tSrc, Instances inD) throws Exception {
+    private Instances selectPointForKDA(int idx, Instances src, Instances tSrc, Instances inD)
+            throws Exception {
         int inN = inD.numInstances();
-        int i = 0, j = 0;
         Instances tmp = new Instances(src);
-        for (i = 0; i < inD.numInstances(); i++) {
+        for (int i = 0; i < inD.numInstances(); i++) {
             tmp.add((Instance) inD.instance(i).copy());
         }
 
-        int[] clabel = new int[tmp.numInstances()];
-        int[] tlabel = new int[inD.numInstances()];
-        for (i = 0; i < tlabel.length; i++) {
-            tlabel[i] = ((int) tmp.instance(i).classValue());
+        int clabel[] = new int[tmp.numInstances()];
+        int tlabel[] = new int[inD.numInstances()];
+        for (int i = 0; i < tlabel.length; i++) {
+            tlabel[i] = (int) tmp.instance(i).classValue();
         }
+
         tmp.setClassIndex(-1);
         tmp.deleteAttributeAt(idx);
-
         Instances ans = new Instances(tSrc, 0);
-
         BRSD_BK bk = new BRSD_BK(tmp, tlabel);
         bk.buildCluster();
         clabel = bk.getLable();
-        int numCluster = -2147483648;
-        for (i = 0; i < tmp.numInstances(); i++) {
+        int numCluster = 0x80000000;
+        for (int i = 0; i < tmp.numInstances(); i++) {
             if (clabel[i] > numCluster) {
                 numCluster = clabel[i];
             }
         }
-        numCluster++;
 
-        int[][] num = new int[numCluster][src.numClasses()];
-
-        int[] label = new int[numCluster];
-
-        for (i = 0; i < numCluster; i++) {
-            for (j = 0; j < src.numClasses(); j++) {
+        int num[][] = new int[++numCluster][src.numClasses()];
+        int label[] = new int[numCluster];
+        for (int i = 0; i < numCluster; i++) {
+            for (int j = 0; j < src.numClasses(); j++) {
                 num[i][j] = 0;
             }
+
             label[i] = -1;
         }
 
-        for (i = inN; i < tmp.numInstances(); i++) {
-            num[clabel[i]][((int) src.instance(i - inN).classValue())] += 1;
+        for (int i = inN; i < tmp.numInstances(); i++) {
+            num[clabel[i]][(int) src.instance(i - inN).classValue()]++;
         }
 
-        for (i = 0; i < numCluster; i++) {
-            int mV = -2147483648;
+        for (int i = 0; i < numCluster; i++) {
+            int mV = 0x80000000;
             int midx = -1;
-            for (j = 0; j < src.numClasses(); j++) {
+            for (int j = 0; j < src.numClasses(); j++) {
                 if (num[i][j] > mV) {
                     mV = num[i][j];
                     midx = j;
                 }
             }
+
             label[i] = midx;
         }
 
-        for (i = 0; i < src.numInstances(); i++) {
-            if ((int) src.instance(i).classValue() == label[clabel[(inN + i)]]) {
-                for (j = 0; j < inN; j++) {
-                    if ((clabel[(inN + i)] == clabel[j]) && (inD.instance(j).classValue() == src.instance(i).classValue())) {
-                        ans.add((Instance) tSrc.instance(i).copy());
-                        break;
+        for (int i = 0; i < src.numInstances(); i++) {
+            if ((int) src.instance(i).classValue() == label[clabel[inN + i]]) {
+                for (int j = 0; j < inN; j++) {
+                    if (clabel[inN + i] != clabel[j] || inD.instance(j).classValue() != src.instance(i).classValue()) {
+                        continue;
                     }
+                    ans.add((Instance) tSrc.instance(i).copy());
+                    break;
                 }
+
             }
         }
+
         return ans;
     }
 
     public double[] getAcc() {
-        return this.accuracy;
+        return accuracy;
     }
 
     public void excute(int idx)
             throws Exception {
-        Instances newInU = new Instances(this.InDomainU);
-        Instances newInL = new Instances(this.InDomainL);
-        Instances newOut = new Instances(this.OutDomain);
-        int i = 0, j = 0;
-        double[][] label = new double[this.maxIt][this.InDomainU.numInstances()];
-
-        double maxAcc = 4.9E-324D;
-        for (i = 0; i < this.maxIt; i++) {
-            Instances trainKDA = new Instances(this.InDomainL);
-            Instances selOut = selectPointForKDA(idx, newOut, this.OutDomain, newInL);
+        Instances newInU = new Instances(InDomainU);
+        Instances newInL = new Instances(InDomainL);
+        Instances newOut = new Instances(OutDomain);
+        double label[][] = new double[maxIt][InDomainU.numInstances()];
+        double maxAcc = 4.9406564584124654E-324D;
+        for (int i = 0; i < maxIt; i++) {
+            Instances trainKDA = new Instances(InDomainL);
+            Instances selOut = selectPointForKDA(idx, newOut, OutDomain, newInL);
             if (i > 0) {
-                for (j = 0; j < selOut.numInstances(); j++) {
+                for (int j = 0; j < selOut.numInstances(); j++) {
                     trainKDA.add(selOut.instance(j));
                 }
-            }
 
+            }
             KDA kda = new KDA(trainKDA);
             kda.excute();
-            newInL = kda.decInstances(this.InDomainL);
-            newInU = kda.decInstances(this.InDomainU);
-            newOut = kda.decInstances(this.OutDomain);
+            newInL = kda.decInstances(InDomainL);
+            newInU = kda.decInstances(InDomainU);
+            newOut = kda.decInstances(OutDomain);
             Instances boostOut = kda.decInstances(selOut);
             Instances trainL = new Instances(newInL);
-            for (j = 0; j < boostOut.numInstances(); j++) {
+            for (int j = 0; j < boostOut.numInstances(); j++) {
                 trainL.add(boostOut.instance(j));
             }
+
             myClassifier MC = new myClassifier(trainL, Classifier.makeCopy(specific_classifier));
             double tc = MC.TestAccuracy(newInU);
             maxAcc = Math.max(tc, maxAcc);
-            if (i == this.maxIt - 1) {
-                if (intCV == this.maxIt) {
-                    fw.write(maxAcc + "\n");
+            if (i == maxIt - 1) {
+                if (intCV == maxIt) {
+                    fw.write((new StringBuilder(String.valueOf(maxAcc))).append("\n").toString());
                 } else {
-                    fw.write(tc + "\n");
+                    fw.write((new StringBuilder(String.valueOf(tc))).append("\n").toString());
                 }
             }
-            for (j = 0; j < newInU.numInstances(); j++) {
+            for (int j = 0; j < newInU.numInstances(); j++) {
                 if (MC.classifyInstance(newInU.instance(j)) == 0.0D) {
                     label[i][j] -= MC.confidence(newInU.instance(j));
                 } else {
                     label[i][j] += MC.confidence(newInU.instance(j));
                 }
             }
+
             double acc = 0.0D;
-            for (j = 0; j < this.InDomainU.numInstances(); j++) {
+            for (int j = 0; j < InDomainU.numInstances(); j++) {
                 double lf = 0.0D;
                 double rt = 0.0D;
                 for (int k = 0; k <= i; k++) {
                     lf += label[k][j];
                     rt += 0.5D;
                 }
+
                 if (lf >= rt) {
-                    if (this.InDomainU.instance(j).classValue() == 1.0D) {
-                        acc += 1.0D;
+                    if (InDomainU.instance(j).classValue() == 1.0D) {
+                        acc++;
                     }
-                } else if ((lf < rt)
-                           && (this.InDomainU.instance(j).classValue() == 0.0D)) {
-                    acc += 1.0D;
+                } else if (lf < rt && InDomainU.instance(j).classValue() == 0.0D) {
+                    acc++;
                 }
             }
 
-            this.accuracy[i] = (acc / this.InDomainU.numInstances() * 100.0D);
+            accuracy[i] = (acc / (double) InDomainU.numInstances()) * 100D;
         }
+
     }
 
-    public static void runReuters(int maxCV, double ratio) throws Exception {
+    public static void runReuters(int maxCV, double ratio)
+            throws Exception {
         String testDataName = "";
         String trainDataName = "";
         String dataName = "";
@@ -204,17 +197,17 @@ public class KMapEnsemble {
                 testDataName = "people vs places test";
                 dataName = "people vs places";
             }
-            Instances trainData = new Instances(new BufferedReader(new FileReader("DataSet/Reuters-21578/" + trainDataName + ".arff")));
+            Instances trainData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/Reuters-21578/")).append(trainDataName).append(".arff").toString())));
             trainData.setClassIndex(trainData.numAttributes() - 1);
-            Instances testData = new Instances(new BufferedReader(new FileReader("DataSet/Reuters-21578/" + testDataName + ".arff")));
+            Instances testData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/Reuters-21578/")).append(testDataName).append(".arff").toString())));
             testData.setClassIndex(testData.numAttributes() - 1);
             trainDataName = trainData.relationName();
             testDataName = testData.relationName();
-
-            fw.write(dataName + " ");
+            fw.write((new StringBuilder(String.valueOf(dataName))).append(" ").toString());
             KMapEnsemble KE = new KMapEnsemble(testData, trainData, maxCV, ratio);
             KE.excute(testData.numAttributes() - 1);
         }
+
     }
 
     public static void runSyskillWebert(int maxCV, double ratio)
@@ -229,27 +222,27 @@ public class KMapEnsemble {
             name.next();
             numDataSet++;
         }
-        String[] dataSetName = new String[numDataSet];
-        name = new Scanner(new File("DataSet/UCI/name.txt"));
-        while (name.hasNext()) {
-            dataSetName[(i++)] = name.next();
+        String dataSetName[] = new String[numDataSet];
+        for (name = new Scanner(new File("DataSet/UCI/name.txt")); name.hasNext();) {
+            dataSetName[i++] = name.next();
         }
+
         for (i = 0; i < numDataSet; i++) {
             for (j = 0; j < numDataSet; j++) {
                 if (i != j) {
-                    Instances trainData = new Instances(new BufferedReader(new FileReader("DataSet/UCI/" + dataSetName[i] + ".arff")));
+                    Instances trainData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/UCI/")).append(dataSetName[i]).append(".arff").toString())));
                     trainData.setClassIndex(0);
-                    Instances testData = new Instances(new BufferedReader(new FileReader("DataSet/UCI/" + dataSetName[j] + ".arff")));
+                    Instances testData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/UCI/")).append(dataSetName[j]).append(".arff").toString())));
                     testData.setClassIndex(0);
                     trainDataName = trainData.relationName();
                     testDataName = testData.relationName();
-                    fw.write(trainDataName + "vs." + testDataName + " ");
-
+                    fw.write((new StringBuilder(String.valueOf(trainDataName))).append("vs.").append(testDataName).append(" ").toString());
                     KMapEnsemble KE = new KMapEnsemble(testData, trainData, maxCV, ratio);
                     KE.excute(0);
                 }
             }
         }
+
     }
 
     public static void run20News(int maxCV, double ratio)
@@ -263,45 +256,45 @@ public class KMapEnsemble {
             } else if (i == 2) {
                 name = "ComVstalk";
             }
-
             fw.write(name);
-            Instances trainData = new Instances(new BufferedReader(new FileReader("DataSet/20newsGroup/" + name + "/outDomain.arff")));
+            Instances trainData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/20newsGroup/")).append(name).append("/outDomain.arff").toString())));
             trainData.setClassIndex(trainData.numAttributes() - 1);
-            Instances testData = new Instances(new BufferedReader(new FileReader("DataSet/20newsGroup/" + name + "/inDomain.arff")));
+            Instances testData = new Instances(new BufferedReader(new FileReader((new StringBuilder("DataSet/20newsGroup/")).append(name).append("/inDomain.arff").toString())));
             testData.setClassIndex(testData.numAttributes() - 1);
-
-            fw.write(name + " ");
+            fw.write((new StringBuilder(String.valueOf(name))).append(" ").toString());
             KMapEnsemble KE = new KMapEnsemble(testData, trainData, maxCV, ratio);
             KE.excute(testData.numAttributes() - 1);
         }
+
     }
 
-    public static void main(String[] args)
+    public static void main(String args[])
             throws Exception {
         String classifierName = "";
-        int maxCV = new Integer(args[0]).intValue();
-        double ratio = new Double(args[1]).doubleValue();
+        int maxCV = (new Integer(args[0])).intValue();
+        double ratio = (new Double(args[1])).doubleValue();
         String dataName = args[2];
         System.out.println("Running....");
         fw = new FileWriter("res_KMapEnsemble.txt", true);
-        fw.write("Number of Iterations: " + maxCV + "\n");
+        fw.write((new StringBuilder("Number of Iterations: ")).append(maxCV).append("\n").toString());
         for (int idx = 1; idx <= 3; idx++) {
             switch (idx) {
-                case 1:
+                case 1: // '\001'
                     specific_classifier = new NaiveBayes();
                     classifierName = "NaiveBayes";
                     break;
-                case 2:
+
+                case 2: // '\002'
                     specific_classifier = new SMO();
                     classifierName = "SMO";
                     break;
-                case 3:
+
+                case 3: // '\003'
                     specific_classifier = new IBk(3);
                     classifierName = "IBk";
                     break;
             }
-
-            fw.write(classifierName + "\n");
+            fw.write((new StringBuilder(String.valueOf(classifierName))).append("\n").toString());
             if (dataName.equals("SyskillWebert")) {
                 runSyskillWebert(maxCV, ratio);
             }
@@ -312,6 +305,7 @@ public class KMapEnsemble {
                 run20News(maxCV, ratio);
             }
         }
+
         fw.close();
     }
 
@@ -319,27 +313,30 @@ public class KMapEnsemble {
         for (int i = 0; i < data.numAttributes(); i++) {
             data.deleteWithMissing(i);
         }
-        int[] numClasses = NumForEachClass(numL, data.numClasses());
+
+        int numClasses[] = NumForEachClass(numL, data.numClasses());
         Instances L = new Instances(data, 0);
         Instances testingSet = new Instances(data, 0);
-        Random rand = new Random((long) (1000000.0D * Math.random()));
+        Random rand = new Random((long) (1000000D * Math.random()));
         data.randomize(rand);
-
         for (int i = 0; i < data.numInstances(); i++) {
             int theClass = (int) data.instance(i).classValue();
             if (numClasses[theClass] > 0) {
                 L.add(data.instance(i));
-                numClasses[theClass] -= 1;
+                numClasses[theClass]--;
             } else {
                 testingSet.add(data.instance(i));
             }
         }
-        Instances[] result = {L, testingSet};
+
+        Instances result[] = {
+            L, testingSet
+        };
         return result;
     }
 
     private int[] NumForEachClass(int total, int classes) {
-        int[] array = new int[classes];
+        int array[] = new int[classes];
         int dim = classes;
         for (int i = 0; i < classes; i++) {
             int k = Math.round(total / dim);
@@ -347,6 +344,18 @@ public class KMapEnsemble {
             total -= k;
             dim--;
         }
+
         return array;
     }
+
+    Instances InDomainU;
+    Instances InDomainL;
+    Instances OutDomain;
+    Instances All;
+    static Classifier specific_classifier;
+    int maxIt;
+    double accuracy[];
+    public static FileWriter fw;
+    public static int intCV = 10;
+
 }

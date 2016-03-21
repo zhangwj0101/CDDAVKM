@@ -1,3 +1,7 @@
+// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.kpdus.com/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   myClassifier.java
 package util;
 
 import weka.classifiers.Classifier;
@@ -7,43 +11,47 @@ import weka.core.Instances;
 
 public class myClassifier {
 
-    private Classifier my_classifier;
-
     public myClassifier(Instances data, Classifier specific_classifier)
             throws Exception {
-        this.my_classifier = Classifier.makeCopy(specific_classifier);
-        this.my_classifier.buildClassifier(data);
+        my_classifier = Classifier.makeCopy(specific_classifier);
+        my_classifier.buildClassifier(data);
     }
 
     public Classifier getClassifier() {
-        return this.my_classifier;
+        return my_classifier;
     }
 
-    public double TestAccuracy(Instances test) throws Exception {
+    public double TestAccuracy(Instances test)
+            throws Exception {
         Evaluation eTest = new Evaluation(test);
-        eTest.evaluateModel(Classifier.makeCopy(this.my_classifier), test);
+        eTest.evaluateModel(Classifier.makeCopy(my_classifier), test);
         double correct = eTest.correct();
-        double acc = 100.0D * correct / test.numInstances();
+        double acc = (100D * correct) / (double) test.numInstances();
         return acc;
     }
 
-    public double confidence(Instance in) throws Exception {
-        double[] fDistribution = this.my_classifier.distributionForInstance(in);
+    public double confidence(Instance in)
+            throws Exception {
+        double fDistribution[] = my_classifier.distributionForInstance(in);
         int indexOfMax = getMax_ofindex(fDistribution);
         return fDistribution[indexOfMax];
     }
 
-    public double classifyInstance(Instance in) throws Exception {
-        return this.my_classifier.classifyInstance(in);
+    public double classifyInstance(Instance in)
+            throws Exception {
+        return my_classifier.classifyInstance(in);
     }
 
-    private int getMax_ofindex(double[] d) {
+    private int getMax_ofindex(double d[]) {
         int max = 0;
         for (int i = 0; i < d.length; i++) {
             if (d[max] < d[i]) {
                 max = i;
             }
         }
+
         return max;
     }
+
+    private Classifier my_classifier;
 }

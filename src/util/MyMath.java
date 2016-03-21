@@ -1,16 +1,20 @@
+// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.kpdus.com/jad.html
+// Decompiler options: packimports(3) 
+// Source File Name:   MyMath.java
 package util;
 
-import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
-import weka.core.Instances;
+import java.io.PrintStream;
+import weka.core.*;
 import weka.core.matrix.Matrix;
 
 public class MyMath {
 
-    public static int[] sort_index(double[] array) {
-        int[] index = new int[array.length];
+    public MyMath() {
+    }
 
+    public static int[] sort_index(double array[]) {
+        int index[] = new int[array.length];
         for (int i = 0; i < array.length; i++) {
             int max = 0;
             for (int j = 1; j < array.length; j++) {
@@ -18,96 +22,101 @@ public class MyMath {
                     max = j;
                 }
             }
+
             index[i] = max;
-            array[max] = -1.0D;
+            array[max] = -1D;
         }
+
         return index;
     }
 
-    public static int[] sort_insert(int[] d) {
+    public static int[] sort_insert(int d[]) {
         int length = d.length;
-
         for (int i = 1; i < length; i++) {
-            int j = i;
-            while (j > 0) {
-                if (d[j] < d[(j - 1)]) {
+            for (int j = i; j > 0; j--) {
+                if (d[j] < d[j - 1]) {
                     int temp = d[j];
-                    d[j] = d[(j - 1)];
-                    d[(j - 1)] = temp;
+                    d[j] = d[j - 1];
+                    d[j - 1] = temp;
                 }
-                j--;
             }
+
         }
+
         return d;
     }
 
-    public static double[] sort_insert(double[] d) {
+    public static double[] sort_insert(double d[]) {
         int length = d.length;
-
         for (int i = 1; i < length; i++) {
-            int j = i;
-            while (j > 0) {
-                if (d[j] < d[(j - 1)]) {
+            for (int j = i; j > 0; j--) {
+                if (d[j] < d[j - 1]) {
                     double temp = d[j];
-                    d[j] = d[(j - 1)];
-                    d[(j - 1)] = temp;
+                    d[j] = d[j - 1];
+                    d[j - 1] = temp;
                 }
-                j--;
             }
+
         }
+
         return d;
     }
 
-    public static void output(int[] d) {
+    public static void output(int d[]) {
         System.out.println("\n\n^^^^^^^^^^^^");
         for (int i = 0; i < d.length; i++) {
             System.out.println(d[i]);
         }
+
         System.out.println("^^^^^^^^^^^^\n\n");
     }
 
-    public static void output(double[] d) {
+    public static void output(double d[]) {
         System.out.println("\n\n^^^^^^^^^^^^");
         for (int i = 0; i < d.length; i++) {
             System.out.println(d[i]);
         }
+
         System.out.println("^^^^^^^^^^^^\n\n");
     }
 
-    public static Instances RD(int[] feature, Instances data) {
+    public static Instances RD(int feature[], Instances data) {
         int fn = feature.length;
         FastVector fv = new FastVector();
-        int idx = 0;
-        for (idx = 0; idx < fn; idx++) {
-            fv.addElement(new Attribute("F" + idx));
+        for (int idx = 0; idx < fn; idx++) {
+            fv.addElement(new Attribute((new StringBuilder("F")).append(idx).toString()));
         }
 
         FastVector classAttribute = new FastVector();
-        for (idx = 0; idx < data.numClasses(); idx++) {
-            classAttribute.addElement(idx);
+        for (int idx = 0; idx < data.numClasses(); idx++) {
+            classAttribute.addElement((new StringBuilder()).append(idx).toString());
         }
+
         fv.addElement(new Attribute("class", classAttribute));
-        int fp = 0;
-        Instances ND = new Instances("RD_" + data.relationName(), fv, data.numInstances());
-        for (idx = 0; idx < data.numInstances(); idx++) {
+        Instances ND = new Instances((new StringBuilder("RD_")).append(data.relationName()).toString(), fv, data.numInstances());
+        for (int idx = 0; idx < data.numInstances(); idx++) {
             Instance f = new Instance(fn + 1);
-            double[] array = data.instance(idx).toDoubleArray();
+            double array[] = data.instance(idx).toDoubleArray();
+            int fp;
             for (fp = 0; fp < fn; fp++) {
                 f.setValue(fp, array[feature[fp]]);
             }
+
             f.setValue(fp, data.instance(idx).classValue());
             ND.add(f);
         }
+
         ND.setClassIndex(fn);
         return ND;
     }
 
-    public static boolean isIn(int key, int[] array, int n) {
-        for (int i = 0; (i < array.length) && (i < n); i++) {
+    public static boolean isIn(int key, int array[], int n) {
+        for (int i = 0; i < array.length && i < n; i++) {
             if (key == array[i]) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -115,19 +124,11 @@ public class MyMath {
         int i = left;
         int j = right;
         double middle = A.get(A.getColumnDimension() / 2, A.getColumnDimension() / 2);
-
-//        break label30;
-        i++;
-//        label30:
         do {
-            if (A.get(i, i) > middle) {
-                if (i < right) {
-                    break;
-                }
+            while (A.get(i, i) > middle && i < right) {
+                i++;
             }
-            while ((A.get(j, j) < middle) && (j > left)) {
-                j--;
-            }
+            for (; A.get(j, j) < middle && j > left; j--);
             if (i <= j) {
                 double temp = A.get(i, i);
                 A.set(i, i, A.get(j, j));
@@ -137,11 +138,11 @@ public class MyMath {
                     B.set(k, i, B.get(k, j));
                     B.set(k, j, temp);
                 }
+
                 i++;
                 j--;
             }
         } while (i <= j);
-
         if (left < j) {
             runSort(A, B, left, j);
         }
@@ -155,110 +156,125 @@ public class MyMath {
     }
 
     public static double cmpP(Instances In, Instances Out) {
-        double[] A = new double[In.numAttributes()];
-        double[] B = new double[Out.numAttributes()];
-        int i = 0;
-        int j = 0;
-        for (i = 0; i < In.numAttributes() - 1; i++) {
+        double A[] = new double[In.numAttributes()];
+        double B[] = new double[Out.numAttributes()];
+        for (int i = 0; i < In.numAttributes() - 1; i++) {
             A[i] = 0.0D;
         }
-        for (i = 0; i < Out.numAttributes() - 1; i++) {
+
+        for (int i = 0; i < Out.numAttributes() - 1; i++) {
             B[i] = 0.0D;
         }
-        for (j = 0; j < In.numAttributes() - 1; j++) {
-            for (i = 0; i < In.numInstances(); i++) {
+
+        for (int j = 0; j < In.numAttributes() - 1; j++) {
+            for (int i = 0; i < In.numInstances(); i++) {
                 A[j] += In.instance(i).value(j);
             }
+
             A[j] /= In.numInstances();
         }
-        for (j = 0; j < Out.numAttributes() - 1; j++) {
-            for (i = 0; i < Out.numInstances(); i++) {
+
+        for (int j = 0; j < Out.numAttributes() - 1; j++) {
+            for (int i = 0; i < Out.numInstances(); i++) {
                 B[j] += Out.instance(i).value(j);
             }
+
             B[j] /= Out.numInstances();
         }
+
         double r = 0.0D;
-        for (i = 0; i < In.numAttributes() - 1; i++) {
+        for (int i = 0; i < In.numAttributes() - 1; i++) {
             r += (A[i] - B[i]) * (A[i] - B[i]);
         }
+
         return r;
     }
 
     public static double CalSim(Instance A, Instance B) {
-        double[] Ar = A.toDoubleArray();
-        double[] Br = B.toDoubleArray();
+        double Ar[] = A.toDoubleArray();
+        double Br[] = B.toDoubleArray();
         double r = 0.0D;
         int fNum = A.numAttributes() - 1;
         for (int i = 0; i < fNum; i++) {
             r += (Ar[i] - Br[i]) * (Ar[i] - Br[i]);
         }
+
         return r;
     }
 
-    public static double CalSim(double[] A, double[] B) {
+    public static double CalSim(double A[], double B[]) {
         double r = 0.0D;
         int fNum = A.length;
         for (int i = 0; i < fNum; i++) {
             r += (A[i] - B[i]) * (A[i] - B[i]);
         }
+
         return r;
     }
 
-    public static double CalMean(double[] data) {
+    public static double CalMean(double data[]) {
         double mean = 0.0D;
         for (int i = 0; i < data.length; i++) {
             mean += data[i];
         }
-        return mean / data.length;
+
+        return mean / (double) data.length;
     }
 
     public static double CalErr(Instances data) {
-        double[] m = new double[data.numAttributes() - 1];
+        double m[] = new double[data.numAttributes() - 1];
         for (int i = 0; i < data.numAttributes() - 1; i++) {
             m[i] = 0.0D;
         }
+
         for (int i = 0; i < data.numAttributes() - 1; i++) {
             m[i] = CalMean(data.attributeToDoubleArray(i));
         }
+
         double err = 0.0D;
         for (int i = 0; i < data.numInstances(); i++) {
             for (int j = 0; j < data.numAttributes() - 1; j++) {
                 err += (data.instance(i).value(j) - m[j]) * (data.instance(i).value(j) - m[j]);
             }
+
         }
+
         return err;
     }
 
-    private static double calTPR(double[] P, double[] T) {
+    private static double calTPR(double P[], double T[]) {
         double num = 0.0D;
         for (int i = 0; i < P.length; i++) {
-            if ((T[i] == 0.0D) && (T[i] == P[i])) {
-                num += 1.0D;
+            if (T[i] == 0.0D && T[i] == P[i]) {
+                num++;
             }
         }
-        return num / P.length;
+
+        return num / (double) P.length;
     }
 
-    private static double calFPR(double[] P, double[] T) {
+    private static double calFPR(double P[], double T[]) {
         double num = 0.0D;
         for (int i = 0; i < P.length; i++) {
-            if ((T[i] == 1.0D) && (T[i] != P[i])) {
-                num += 1.0D;
+            if (T[i] == 1.0D && T[i] != P[i]) {
+                num++;
             }
         }
-        return num / P.length;
+
+        return num / (double) P.length;
     }
 
-    public static double calAUC(double[] Conf, double[] T) {
-        double[] tmpConf = new double[Conf.length];
-        double[] TP = new double[Conf.length];
-        double[] FP = new double[Conf.length];
+    public static double calAUC(double Conf[], double T[]) {
+        double tmpConf[] = new double[Conf.length];
+        double TP[] = new double[Conf.length];
+        double FP[] = new double[Conf.length];
         for (int i = 0; i < tmpConf.length; i++) {
             tmpConf[i] = Conf[i];
         }
-        int[] pt = sort_index(tmpConf);
+
+        int pt[] = sort_index(tmpConf);
         for (int i = 0; i < tmpConf.length; i++) {
-            double[] P = new double[tmpConf.length];
+            double P[] = new double[tmpConf.length];
             for (int j = 0; j < tmpConf.length; j++) {
                 if (j < i) {
                     P[pt[j]] = 0.0D;
@@ -266,13 +282,16 @@ public class MyMath {
                     P[pt[j]] = 1.0D;
                 }
             }
+
             TP[i] = calTPR(P, T);
             FP[i] = calFPR(P, T);
         }
+
         double auc = 0.0D;
         for (int i = 1; i < tmpConf.length; i++) {
-            auc += (FP[i] - FP[(i - 1)]) * (TP[i] + TP[(i - 1)]);
+            auc += (FP[i] - FP[i - 1]) * (TP[i] + TP[i - 1]);
         }
-        return 1.0D - auc / 2.0D;
+
+        return 1.0D - auc / 2D;
     }
 }
