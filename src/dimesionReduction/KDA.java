@@ -5,6 +5,8 @@
 package dimesionReduction;
 
 import java.io.*;
+import java.util.Arrays;
+
 import util.MyMath;
 import weka.core.*;
 import weka.core.matrix.EigenvalueDecomposition;
@@ -35,7 +37,6 @@ public class KDA {
 
         }
 
-        omit = omit;
         for (int i = 0; i < srcData.numInstances(); i++) {
             for (int j = 0; j < srcData.numInstances(); j++) {
                 double val = Math.exp(-MyMath.CalSim(srcData.instance(i), srcData.instance(j)) / omit);
@@ -96,9 +97,10 @@ public class KDA {
     }
 
     private void calSpNum() {
-        for (int i = 0; i < srcData.numClasses(); i++) {
-            num[i] = 0;
-        }
+//        for (int i = 0; i < srcData.numClasses(); i++) {
+//            num[i] = 0;
+//        }
+        Arrays.fill(num,0);
 
         for (int i = 0; i < srcData.numInstances(); i++) {
             num[(int) srcData.instance(i).classValue()]++;

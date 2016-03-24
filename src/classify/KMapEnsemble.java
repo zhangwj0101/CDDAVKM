@@ -313,6 +313,7 @@ public class KMapEnsemble {
             if (dataName.equals("20News")) {
                 run20News(maxCV, ratio);
             }
+            fw.write("\n");
         }
 
         fw.close();
