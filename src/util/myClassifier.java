@@ -25,6 +25,7 @@ public class myClassifier {
             throws Exception {
         Evaluation eTest = new Evaluation(test);
         eTest.evaluateModel(Classifier.makeCopy(my_classifier), test);
+
         double correct = eTest.correct();
         double acc = (100D * correct) / (double) test.numInstances();
         return acc;

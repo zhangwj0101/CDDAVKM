@@ -26,9 +26,9 @@ public class KMapEnsemble {
     public KMapEnsemble(Instances In, Instances Out, int it, double ratio)
             throws Exception {
         Instances tmp[] = getLU(In, (int) ((double) In.numInstances() * ratio));
-        InDomainL = new Instances(tmp[0]);
-        InDomainU = new Instances(tmp[1]);
-        OutDomain = new Instances(Out);
+        InDomainL = new Instances(tmp[0]); //训练
+        InDomainU = new Instances(tmp[1]); //测试
+        OutDomain = new Instances(Out); //源领域训练
         All = new Instances(InDomainL);
         for (int i = 0; i < Out.numInstances(); i++) {
             All.add((Instance) Out.instance(i).copy());
@@ -117,6 +117,9 @@ public class KMapEnsemble {
         Instances newInU = new Instances(InDomainU);
         Instances newInL = new Instances(InDomainL);
         Instances newOut = new Instances(OutDomain);
+        //无监督训练数据
+        Instances unsperTrain = new Instances(newInL);
+
         double label[][] = new double[maxIt][InDomainU.numInstances()];
         double maxAcc = 4.9406564584124654E-324D;
         for (int i = 0; i < maxIt; i++) {
@@ -126,7 +129,6 @@ public class KMapEnsemble {
                 for (int j = 0; j < selOut.numInstances(); j++) {
                     trainKDA.add(selOut.instance(j));
                 }
-
             }
             KDA kda = new KDA(trainKDA);
             kda.excute();
@@ -174,7 +176,7 @@ public class KMapEnsemble {
                     acc++;
                 }
             }
-
+            System.out.printf("iter:%d\t%f\t%f\n", i, tc, maxAcc);
             accuracy[i] = (acc / (double) InDomainU.numInstances()) * 100D;
         }
 
@@ -319,7 +321,17 @@ public class KMapEnsemble {
         fw.close();
     }
 
+    /**
+     * 挑选训练集和测试集
+     *
+     * @param data
+     * @param numL
+     * @return
+     */
     private Instances[] getLU(Instances data, int numL) {
+        /**
+         * 保证每一列都存在
+         */
         for (int i = 0; i < data.numAttributes(); i++) {
             data.deleteWithMissing(i);
         }

@@ -5,6 +5,7 @@
 package util;
 
 import java.io.*;
+
 import weka.clusterers.SimpleKMeans;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -15,9 +16,6 @@ public class BRSD_BK {
         src = new Instances(data);
         label = trueL;
         clusterLabel = new int[src.numInstances()];
-        for (int i = 0; i < src.numInstances(); i++) {
-            clusterLabel[i] = 0;
-        }
 
         numCluster = 1;
     }

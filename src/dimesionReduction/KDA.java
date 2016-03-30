@@ -22,6 +22,16 @@ public class KDA {
         W = new Matrix(data.numInstances(), data.numInstances());
     }
 
+    public void excute() {
+        buildKM();
+        calSpNum();
+        buildW();
+        calEig();
+        comNewKennel();
+        calBeta();
+        calAphal();
+    }
+
     private void buildKM() {
         sumK = new Matrix(srcData.numInstances(), srcData.numInstances());
         Matrix ones = new Matrix(srcData.numInstances(), srcData.numInstances());
@@ -50,6 +60,16 @@ public class KDA {
         kernelM = kernelM.minus(sumK.transpose()).minus(sumK).plus(sumK.times(ones));
     }
 
+    private void calSpNum() {
+
+        Arrays.fill(num, 0);
+
+        for (int i = 0; i < srcData.numInstances(); i++) {
+            num[(int) srcData.instance(i).classValue()]++;
+        }
+
+    }
+
     private void buildW() {
         int pt = 0;
         for (int i = 0; i < srcData.numInstances(); i++) {
@@ -76,7 +96,7 @@ public class KDA {
         EigenvalueDecomposition ED = kernelM.eig();
         eigVal = ED.getD();
         eigVec = ED.getV();
-        new MyMath();
+
         MyMath.quickSort(eigVal, eigVec);
         rankKM = 0;
         double minV = eigVal.get(0, 0) / 1000D;
@@ -96,24 +116,12 @@ public class KDA {
         kernelM = eigVec.times(eigVal).times(eigVec.transpose());
     }
 
-    private void calSpNum() {
-//        for (int i = 0; i < srcData.numClasses(); i++) {
-//            num[i] = 0;
-//        }
-        Arrays.fill(num,0);
-
-        for (int i = 0; i < srcData.numInstances(); i++) {
-            num[(int) srcData.instance(i).classValue()]++;
-        }
-
-    }
 
     private void calBeta() {
         Matrix newT = eigVec.transpose().times(W).times(eigVec);
         EigenvalueDecomposition ED = newT.eig();
         betaVal = ED.getD();
         betaVec = ED.getV();
-        new MyMath();
         MyMath.quickSort(betaVal, betaVec);
     }
 
@@ -128,7 +136,6 @@ public class KDA {
             }
 
         }
-
     }
 
     public Instances decInstances(Instances newData) {
@@ -193,15 +200,6 @@ public class KDA {
         return disData;
     }
 
-    public void excute() {
-        buildKM();
-        calSpNum();
-        buildW();
-        calEig();
-        comNewKennel();
-        calBeta();
-        calAphal();
-    }
 
     public static void main(String args[])
             throws Exception {
