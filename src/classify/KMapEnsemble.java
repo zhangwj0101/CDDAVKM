@@ -7,8 +7,7 @@ package classify;
 import dimesionReduction.KDA;
 
 import java.io.*;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 import util.BRSD_BK;
 import util.myClassifier;
@@ -116,10 +115,14 @@ public class KMapEnsemble {
             throws Exception {
         Instances newInU = new Instances(InDomainU);
         Instances newInL = new Instances(InDomainL);
+
         Instances newOut = new Instances(OutDomain);
         //无监督训练数据
         Instances unsperTrain = new Instances(newInL);
-
+        Node[] testRightCount = new Node[newInU.numInstances()];
+        for (int i = 0; i < newInU.numInstances(); i++) {
+            testRightCount[i] = new Node(i, 0);
+        }
         double label[][] = new double[maxIt][InDomainU.numInstances()];
         double maxAcc = 4.9406564584124654E-324D;
         for (int i = 0; i < maxIt; i++) {
@@ -170,9 +173,11 @@ public class KMapEnsemble {
 
                 if (lf >= rt) {
                     if (InDomainU.instance(j).classValue() == 1.0D) {
+                        testRightCount[j].count++;
                         acc++;
                     }
                 } else if (lf < rt && InDomainU.instance(j).classValue() == 0.0D) {
+                    testRightCount[j].count++;
                     acc++;
                 }
             }
@@ -180,6 +185,23 @@ public class KMapEnsemble {
             accuracy[i] = (acc / (double) InDomainU.numInstances()) * 100D;
         }
 
+
+        Arrays.sort(testRightCount, new Comparator<Node>() {
+            @Override
+            public int compare(Node o1, Node o2) {
+                return o2.count - o1.count;
+            }
+        });
+
+        for (int i = 1; i <= 4; i++) {
+            Instances originInL = new Instances(InDomainL);
+            for (int j = 0; j < InDomainU.numInstances() * i * 0.1; j++) {
+                originInL.add(InDomainU.instance(j));
+            }
+            myClassifier MC = new myClassifier(originInL, Classifier.makeCopy(specific_classifier));
+            double tc = MC.TestAccuracy(InDomainU);
+            System.out.printf("it %d\tunsu : %.4f\n", i, tc);
+        }
     }
 
     public static void runReuters(int maxCV, double ratio)
@@ -233,7 +255,8 @@ public class KMapEnsemble {
             dataSetName[i++] = name.next();
         }
 
-        for (i = 0; i < numDataSet; i++) {
+//        for (i = 0; i < numDataSet; i++) {
+        for (i = 0; i < 1; i++) {
             for (j = 0; j < numDataSet; j++) {
                 if (i != j) {
                     Instances trainData = new Instances(new BufferedReader(new FileReader((new StringBuilder(BASE + "DataSet/UCI/")).append(dataSetName[i]).append(".arff").toString())));
@@ -380,4 +403,22 @@ public class KMapEnsemble {
     public static FileWriter fw;
     public static int intCV = 10;
 
+}
+
+class Node {
+    int idx;
+    int count = 0;
+
+    public Node(int idx, int count) {
+        this.idx = idx;
+        this.count = count;
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "idx=" + idx +
+                ", count=" + count +
+                '}';
+    }
 }

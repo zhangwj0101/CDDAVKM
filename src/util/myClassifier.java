@@ -21,6 +21,7 @@ public class myClassifier {
         return my_classifier;
     }
 
+
     public double TestAccuracy(Instances test)
             throws Exception {
         Evaluation eTest = new Evaluation(test);
@@ -30,7 +31,6 @@ public class myClassifier {
         double acc = (100D * correct) / (double) test.numInstances();
         return acc;
     }
-
     public double confidence(Instance in)
             throws Exception {
         double fDistribution[] = my_classifier.distributionForInstance(in);
