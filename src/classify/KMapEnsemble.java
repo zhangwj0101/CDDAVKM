@@ -37,6 +37,7 @@ public class KMapEnsemble {
         accuracy = new double[maxIt];
     }
 
+
     private Instances selectPointForKDA(int idx, Instances src, Instances tSrc, Instances inD)
             throws Exception {
         int inN = inD.numInstances();
@@ -52,7 +53,7 @@ public class KMapEnsemble {
         }
 
         tmp.setClassIndex(-1);
-        tmp.deleteAttributeAt(idx);
+//        tmp.deleteAttributeAt(idx);
         Instances ans = new Instances(tSrc, 0);
         BRSD_BK bk = new BRSD_BK(tmp, tlabel);
         bk.buildCluster();
@@ -115,7 +116,7 @@ public class KMapEnsemble {
             throws Exception {
         Instances newInU = new Instances(InDomainU);
         Instances newInL = new Instances(InDomainL);
-
+        double averageAcc = 0.0;
         Instances newOut = new Instances(OutDomain);
         //无监督训练数据
         Instances unsperTrain = new Instances(newInL);
@@ -126,6 +127,7 @@ public class KMapEnsemble {
         double label[][] = new double[maxIt][InDomainU.numInstances()];
         double maxAcc = 4.9406564584124654E-324D;
         for (int i = 0; i < maxIt; i++) {
+            System.out.println(i + " start");
             Instances trainKDA = new Instances(InDomainL);
             Instances selOut = selectPointForKDA(idx, newOut, OutDomain, newInL);
             if (i > 0) {
@@ -146,12 +148,13 @@ public class KMapEnsemble {
 
             myClassifier MC = new myClassifier(trainL, Classifier.makeCopy(specific_classifier));
             double tc = MC.TestAccuracy(newInU);
+            averageAcc += tc;
             maxAcc = Math.max(tc, maxAcc);
             if (i == maxIt - 1) {
                 if (intCV == maxIt) {
-                    fw.write((new StringBuilder(String.valueOf(maxAcc))).append("\n").toString());
+                    fw.write((new StringBuilder(String.valueOf(maxAcc))).append(" MAx \n").toString());
                 } else {
-                    fw.write((new StringBuilder(String.valueOf(tc))).append("\n").toString());
+                    fw.write((new StringBuilder(String.valueOf(tc))).append(" TC \n").toString());
                 }
             }
             for (int j = 0; j < newInU.numInstances(); j++) {
@@ -184,7 +187,7 @@ public class KMapEnsemble {
             System.out.printf("iter:%d\t%f\t%f\n", i, tc, maxAcc);
             accuracy[i] = (acc / (double) InDomainU.numInstances()) * 100D;
         }
-
+        System.out.printf("average: %f\n", averageAcc / maxIt);
 
         Arrays.sort(testRightCount, new Comparator<Node>() {
             @Override
@@ -200,7 +203,7 @@ public class KMapEnsemble {
             }
             myClassifier MC = new myClassifier(originInL, Classifier.makeCopy(specific_classifier));
             double tc = MC.TestAccuracy(InDomainU);
-            System.out.printf("it %d\tunsu : %.4f\n", i, tc);
+            System.out.printf("it %d\tunsu : %.8f\n", i, tc);
         }
     }
 
@@ -276,6 +279,40 @@ public class KMapEnsemble {
 
     }
 
+    public static void run20News_ZWJ(int maxCV, double ratio)
+            throws Exception {
+        String name = "AD";
+        fw.write(name);
+
+        Instances trainData = new Instances(new BufferedReader(new FileReader("C:\\20NG\\ct_outDomain.arff")));
+        trainData.setClassIndex(trainData.numAttributes() - 1);
+        Instances testData = new Instances(new BufferedReader(new FileReader("C:\\20NG\\ct_inDomain.arff")));
+        testData.setClassIndex(testData.numAttributes() - 1);
+        fw.write((new StringBuilder(String.valueOf(name))).append(" ").toString());
+        KMapEnsemble KE = new KMapEnsemble(testData, trainData, maxCV, ratio);
+        KE.excute(testData.numAttributes() - 1);
+
+
+    }
+
+    public static void runReuters_ZWJ(int maxCV, double ratio, String srcPath, String tarPath)
+            throws Exception {
+        System.out.println("Running....");
+        fw = new FileWriter("runReuters_ZWJ.txt", true);
+        specific_classifier = new NaiveBayes();
+        Instances trainData = new Instances(new BufferedReader(new FileReader(srcPath)));
+        trainData.setClassIndex(trainData.numAttributes() - 1);
+        Instances testData = new Instances(new BufferedReader(new FileReader(tarPath)));
+        testData.setClassIndex(testData.numAttributes() - 1);
+        String trainDataName = trainData.relationName();
+        String testDataName = testData.relationName();
+        String res = (new StringBuilder(String.valueOf(trainDataName))).append(" vs ").append(testDataName).append(" : ").toString();
+        System.out.println(res);
+        fw.write(res);
+        KMapEnsemble KE = new KMapEnsemble(testData, trainData, maxCV, ratio);
+        KE.excute(testData.numAttributes() - 1);
+    }
+
     public static void run20News(int maxCV, double ratio)
             throws Exception {
         for (int i = 0; i < 3; i++) {
@@ -299,8 +336,8 @@ public class KMapEnsemble {
 
     }
 
-    public static void main(String args[])
-            throws Exception {
+
+    public static void origin() throws Exception {
         String classifierName = "";
 //        int maxCV = (new Integer(args[0])).intValue();
 //        double ratio = (new Double(args[1])).doubleValue();
@@ -323,6 +360,45 @@ public class KMapEnsemble {
                     classifierName = "SMO";
                     break;
 
+                case 3: // '\003'
+                    specific_classifier = new IBk(3);
+                    classifierName = "IBk";
+                    break;
+            }
+            fw.write((new StringBuilder(String.valueOf(classifierName))).append("\n").toString());
+            if (dataName.equals("SyskillWebert")) {
+                runSyskillWebert(maxCV, ratio);
+            }
+            if (dataName.equals("Reuters")) {
+                runReuters(maxCV, ratio);
+            }
+            if (dataName.equals("20News")) {
+                run20News(maxCV, ratio);
+            }
+            fw.write("\n");
+        }
+
+        fw.close();
+    }
+
+    public static void main(String args[]) throws Exception {
+        String classifierName = "";
+        int maxCV = 10;
+        double ratio = 0.1;
+        String dataName = "20News";
+        System.out.println("Running....");
+        fw = new FileWriter("res_KMapEnsemble.txt", true);
+        fw.write((new StringBuilder("Number of Iterations: ")).append(maxCV).append("\n").toString());
+        for (int idx = 1; idx <= 3; idx++) {
+            switch (idx) {
+                case 1: // '\001'
+                    specific_classifier = new NaiveBayes();
+                    classifierName = "NaiveBayes";
+                    break;
+                case 2: // '\002'
+                    specific_classifier = new SMO();
+                    classifierName = "SMO";
+                    break;
                 case 3: // '\003'
                     specific_classifier = new IBk(3);
                     classifierName = "IBk";
