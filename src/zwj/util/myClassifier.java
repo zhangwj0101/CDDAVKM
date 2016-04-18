@@ -2,7 +2,7 @@
 // Jad home page: http://www.kpdus.com/jad.html
 // Decompiler options: packimports(3) 
 // Source File Name:   myClassifier.java
-package util;
+package zwj.util;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;

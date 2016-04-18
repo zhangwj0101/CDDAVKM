@@ -2,7 +2,7 @@
 // Jad home page: http://www.kpdus.com/jad.html
 // Decompiler options: packimports(3) 
 // Source File Name:   BRSD_BK.java
-package util;
+package zwj.util;
 
 import java.io.*;
 

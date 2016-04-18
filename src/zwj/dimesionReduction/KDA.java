@@ -2,12 +2,12 @@
 // Jad home page: http://www.kpdus.com/jad.html
 // Decompiler options: packimports(3) 
 // Source File Name:   KDA.java
-package dimesionReduction;
+package zwj.dimesionReduction;
 
 import java.io.*;
 import java.util.Arrays;
 
-import util.MyMath;
+import zwj.util.MyMath;
 import weka.core.*;
 import weka.core.matrix.EigenvalueDecomposition;
 import weka.core.matrix.Matrix;

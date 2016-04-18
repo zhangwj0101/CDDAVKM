@@ -2,9 +2,8 @@
 // Jad home page: http://www.kpdus.com/jad.html
 // Decompiler options: packimports(3) 
 // Source File Name:   MyMath.java
-package util;
+package zwj.util;
 
-import java.io.PrintStream;
 import weka.core.*;
 import weka.core.matrix.Matrix;
 
